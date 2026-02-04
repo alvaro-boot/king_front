@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>King Perfum - Inicio de Sesión</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="login-screen" class="screen active">
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-header">
+          <h1>King Perfum</h1>
+          <p>Sistema de Gestión</p>
+        </div>
+        <form id="login-form" class="login-form">
+          <div class="form-group">
+            <label for="usuario">Usuario</label>
+            <input type="text" id="usuario" name="usuario" required placeholder="Ingrese su usuario">
+          </div>
+          <div class="form-group">
+            <label for="contraseña">Contraseña</label>
+            <input type="password" id="contraseña" name="contraseña" required placeholder="Ingrese su contraseña">
+          </div>
+          <div id="login-error" class="error-message"></div>
+          <button type="submit" class="btn btn-primary btn-block">Iniciar Sesión</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes - King Perfum</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-brand">
+      <h2><a href="ventas.html" class="logo-link">King Perfum</a></h2>
+      <span id="user-name" class="user-badge"></span>
+    </div>
+    <nav class="main-nav">
+      <a href="ventas.html" class="nav-link">Ventas</a>
+      <a href="stock.html" class="nav-link">Stock</a>
+      <a href="clientes.html" class="nav-link active">Clientes</a>
+      <a href="reportes.html" class="nav-link">Reportes</a>
+      <button class="nav-btn btn-logout" id="btn-logout">Cerrar Sesión</button>
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <div class="section-header">
+      <h3>Gestión de Clientes</h3>
+      <button class="btn btn-primary" id="btn-nuevo-cliente">Nuevo Cliente</button>
+    </div>
+    <form id="cliente-form" class="form-card" style="display:none;">
+      <h4 id="cliente-form-title">Nuevo Cliente</h4>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="cliente-nombre">Nombre Completo</label>
+          <input type="text" id="cliente-nombre" required>
+        </div>
+        <div class="form-group">
+          <label for="cliente-deuda">Deuda Inicial</label>
+          <input type="number" id="cliente-deuda" value="0" min="0">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="button" class="btn btn-secondary" id="btn-cancelar-cliente">Cancelar</button>
+      </div>
+    </form>
+    <div class="clientes-grid">
+      <div class="clientes-lista-card">
+        <h4>Lista de Clientes</h4>
+        <div id="clientes-lista" class="data-list"></div>
+      </div>
+      <div class="cliente-detalle-card">
+        <h4>Detalle del Cliente</h4>
+        <div id="cliente-detalle" class="cliente-detalle-content">
+          <p class="placeholder">Seleccione un cliente para ver su detalle, abonos y registrar pagos.</p>
+        </div>
+        <div id="abono-form-container" style="display:none;">
+          <h5>Registrar Abono</h5>
+          <form id="abono-form">
+            <input type="hidden" id="abono-cliente-id">
+            <div class="form-group">
+              <label>Deuda actual: $<span id="abono-deuda-actual">0</span></label>
+            </div>
+            <div class="form-group">
+              <label for="abono-valor">Valor del abono</label>
+              <input type="number" id="abono-valor" required min="1" placeholder="Monto a abonar">
+            </div>
+            <button type="submit" class="btn btn-primary">Registrar Abono</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/clientes.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock - King Perfum</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-brand">
+      <h2><a href="ventas.html" class="logo-link">King Perfum</a></h2>
+      <span id="user-name" class="user-badge"></span>
+    </div>
+    <nav class="main-nav">
+      <a href="ventas.html" class="nav-link">Ventas</a>
+      <a href="stock.html" class="nav-link active">Stock</a>
+      <a href="clientes.html" class="nav-link">Clientes</a>
+      <a href="reportes.html" class="nav-link">Reportes</a>
+      <button class="nav-btn btn-logout" id="btn-logout">Cerrar Sesión</button>
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="productos">Productos</button>
+      <button class="tab-btn" data-tab="categorias">Categorías</button>
+    </div>
+    <div id="tab-productos" class="tab-content active">
+      <div class="section-header">
+        <h3>Gestión de Productos</h3>
+        <button class="btn btn-primary" id="btn-nuevo-producto">Nuevo Producto</button>
+      </div>
+      <form id="producto-form" class="form-card" style="display:none;">
+        <h4 id="producto-form-title">Nuevo Producto</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="producto-nombre">Nombre</label>
+            <input type="text" id="producto-nombre" required>
+          </div>
+          <div class="form-group">
+            <label for="producto-categoria">Categoría</label>
+            <select id="producto-categoria"></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="producto-precio-venta">Precio Venta</label>
+            <input type="number" id="producto-precio-venta" required min="0">
+          </div>
+          <div class="form-group">
+            <label for="producto-precio-compra">Precio Compra</label>
+            <input type="number" id="producto-precio-compra" required min="0">
+          </div>
+          <div class="form-group">
+            <label for="producto-genero">Género</label>
+            <select id="producto-genero">
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+              <option value="Unisex">Unisex</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-producto">Cancelar</button>
+        </div>
+      </form>
+      <div id="productos-lista" class="data-table-container"></div>
+    </div>
+    <div id="tab-categorias" class="tab-content">
+      <div class="section-header">
+        <h3>Gestión de Categorías</h3>
+        <button class="btn btn-primary" id="btn-nueva-categoria">Nueva Categoría</button>
+      </div>
+      <form id="categoria-form" class="form-card" style="display:none;">
+        <h4 id="categoria-form-title">Nueva Categoría</h4>
+        <div class="form-group">
+          <label for="categoria-nombre">Nombre</label>
+          <input type="text" id="categoria-nombre" required>
+        </div>
+        <div class="form-group">
+          <label for="categoria-descripcion">Descripción</label>
+          <textarea id="categoria-descripcion" rows="2"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-categoria">Cancelar</button>
+        </div>
+      </form>
+      <div id="categorias-lista" class="data-table-container"></div>
+    </div>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/stock.js"></script>
+</body>
+</html>
