@@ -4,5 +4,5 @@
  * Usa otro puerto para el frontend (ej: npx serve -p 5000) para evitar conflictos.
  */
 const CONFIG = {
-  API_BASE: "http://localhost:3000",
+  API_BASE: "https://backend-king-perfum.onrender.com",
 };
