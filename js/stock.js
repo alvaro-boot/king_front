@@ -57,6 +57,10 @@ function initStock() {
           document.getElementById("producto-precio-compra").value,
           10,
         ),
+        cantidad: parseInt(
+          document.getElementById("producto-cantidad").value || "0",
+          10,
+        ),
         genero: document.getElementById("producto-genero").value,
       };
       const catId = document.getElementById("producto-categoria").value;
@@ -123,7 +127,7 @@ async function loadProductos() {
     }
     container.innerHTML = `
       <table class="data-table">
-        <thead><tr><th>Nombre</th><th>Precio Venta</th><th>Precio Compra</th><th>Género</th><th>Categoría</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Precio Venta</th><th>Precio Compra</th><th>Cantidad</th><th>Género</th><th>Categoría</th><th>Acciones</th></tr></thead>
         <tbody>${(productos || [])
           .map(
             (p) => `
@@ -131,6 +135,7 @@ async function loadProductos() {
             <td>${getStr(p, "nombre")}</td>
             <td>$${getNum(p, "precio_de_venta").toLocaleString()}</td>
             <td>$${getNum(p, "precio_compra").toLocaleString()}</td>
+            <td>${getNum(p, "cantidad")}</td>
             <td>${getStr(p, "genero") || "-"}</td>
             <td>${getStr(p.categoria, "nombre") || "-"}</td>
             <td class="actions">
@@ -163,6 +168,10 @@ async function loadProductos() {
         document.getElementById("producto-precio-compra").value = getNum(
           p,
           "precio_compra",
+        );
+        document.getElementById("producto-cantidad").value = getNum(
+          p,
+          "cantidad",
         );
         document.getElementById("producto-genero").value =
           getStr(p, "genero") || "M";
