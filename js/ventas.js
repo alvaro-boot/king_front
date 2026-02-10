@@ -81,8 +81,12 @@ function initVentas() {
       document.getElementById("venta-tipo").value,
       10,
     );
-    if (!clienteId || !tipoDeVentaId) {
-      alert("Seleccione cliente y tipo de venta");
+    const tipoDePagoId = parseInt(
+      document.getElementById("venta-tipo-pago").value,
+      10,
+    );
+    if (!clienteId || !tipoDeVentaId || !tipoDePagoId) {
+      alert("Seleccione cliente, tipo de venta y tipo de pago");
       return;
     }
     if (ventaProductos.length === 0) {
@@ -100,6 +104,7 @@ function initVentas() {
       await api.createVenta({
         valor_total: valorTotal,
         tipo_de_venta_id: tipoDeVentaId,
+        tipo_de_pago_id: tipoDePagoId,
         cliente_id: clienteId,
         producto_ids: productoIds,
       });
@@ -145,14 +150,16 @@ function renderVentaProductos() {
 
 async function loadVentas() {
   try {
-    const [ventas, clientes, tipos, productos] = await Promise.all([
+    const [ventas, clientes, tipos, tiposPago, productos] = await Promise.all([
       api.getVentas(),
       api.getClientes(),
       api.getTiposVenta(),
+      api.getTiposPago(),
       api.getProductos(),
     ]);
     const selectCliente = document.getElementById("venta-cliente");
     const selectTipo = document.getElementById("venta-tipo");
+    const selectTipoPago = document.getElementById("venta-tipo-pago");
     const selectProducto = document.getElementById("producto-agregar");
     selectCliente.innerHTML =
       '<option value="">Seleccionar cliente...</option>' +
@@ -170,6 +177,14 @@ async function loadVentas() {
             `<option value="${t.id}">${
               getStr(t, "descripcion") || "Tipo " + t.id
             }</option>`,
+        )
+        .join("");
+    selectTipoPago.innerHTML =
+      '<option value="">Seleccionar forma de pago...</option>' +
+      (tiposPago || [])
+        .map(
+          (tp) =>
+            `<option value="${tp.id}">${getStr(tp, "nombre") || "Tipo " + tp.id}</option>`,
         )
         .join("");
     selectProducto.innerHTML =
@@ -238,8 +253,11 @@ async function showVentaDetalle(ventaId) {
         <p><strong>Cliente:</strong> ${
           getStr(venta.cliente, "nombre_completo") || "N/A"
         }</p>
-        <p><strong>Tipo:</strong> ${
+        <p><strong>Tipo venta:</strong> ${
           getStr(venta.tipoDeVenta, "descripcion") || "N/A"
+        }</p>
+        <p><strong>Forma de pago:</strong> ${
+          getStr(venta.tipoDePago, "nombre") || "N/A"
         }</p>
         <p><strong>Fecha:</strong> ${fecha}</p>
         <p><strong>Total:</strong> $${getNum(

@@ -103,6 +103,11 @@ const api = {
   createTipoVenta: (data) =>
     request("/tipos-de-venta", { method: "POST", body: data }),
 
+  // Tipos de pago
+  getTiposPago: () => request("/tipos-de-pago"),
+  createTipoPago: (data) =>
+    request("/tipos-de-pago", { method: "POST", body: data }),
+
   // Ventas
   getVentas: () => request("/ventas"),
   createVenta: (data) => request("/ventas", { method: "POST", body: data }),
