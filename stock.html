@@ -28,6 +28,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="productos">Productos</button>
       <button class="tab-btn" data-tab="categorias">Categorías</button>
+      <button class="tab-btn" data-tab="tipos-pago">Tipos de pago</button>
     </div>
     <div id="tab-productos" class="tab-content active">
       <div class="section-header">
@@ -96,6 +97,24 @@
         </div>
       </form>
       <div id="categorias-lista" class="data-table-container"></div>
+    </div>
+    <div id="tab-tipos-pago" class="tab-content">
+      <div class="section-header">
+        <h3>Gestión de Tipos de Pago</h3>
+        <button class="btn btn-primary" id="btn-nuevo-tipo-pago">Nuevo Tipo de Pago</button>
+      </div>
+      <form id="tipo-pago-form" class="form-card" style="display:none;">
+        <h4 id="tipo-pago-form-title">Nuevo Tipo de Pago</h4>
+        <div class="form-group">
+          <label for="tipo-pago-nombre">Nombre</label>
+          <input type="text" id="tipo-pago-nombre" required placeholder="Ej: Efectivo, Transferencia, Tarjeta">
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-tipo-pago">Cancelar</button>
+        </div>
+      </form>
+      <div id="tipos-pago-lista" class="data-table-container"></div>
     </div>
   </main>
 

@@ -17,6 +17,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+function toggleClienteRequerido() {
+  const selectTipo = document.getElementById("venta-tipo");
+  const selectCliente = document.getElementById("venta-cliente");
+  const hint = document.getElementById("venta-cliente-hint");
+  const opt = selectTipo.selectedOptions[0];
+  const desc = (opt?.dataset?.descripcion || "").toLowerCase();
+  const esContado = desc.includes("contado");
+  if (esContado) {
+    selectCliente.removeAttribute("required");
+    if (hint) hint.textContent = "(opcional en venta de contado)";
+  } else {
+    selectCliente.setAttribute("required", "required");
+    if (hint) hint.textContent = "";
+  }
+}
+
 function initVentas() {
   const ventaForm = document.getElementById("venta-form");
   const btnAgregarProducto = document.getElementById("btn-agregar-producto");
@@ -71,43 +87,52 @@ function initVentas() {
       }
     });
 
+  document.getElementById("venta-tipo").addEventListener("change", toggleClienteRequerido);
+
   ventaForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const clienteId = parseInt(
-      document.getElementById("venta-cliente").value,
-      10,
-    );
-    const tipoDeVentaId = parseInt(
-      document.getElementById("venta-tipo").value,
-      10,
-    );
+    const selectTipo = document.getElementById("venta-tipo");
+    const tipoDeVentaId = parseInt(selectTipo.value, 10);
     const tipoDePagoId = parseInt(
       document.getElementById("venta-tipo-pago").value,
       10,
     );
-    if (!clienteId || !tipoDeVentaId || !tipoDePagoId) {
-      alert("Seleccione cliente, tipo de venta y tipo de pago");
+    const descripcionTipo = (selectTipo.selectedOptions[0]?.dataset?.descripcion || "").toLowerCase();
+    const esContado = descripcionTipo.includes("contado");
+    const clienteIdRaw = document.getElementById("venta-cliente").value;
+    const clienteId = clienteIdRaw ? parseInt(clienteIdRaw, 10) : null;
+
+    if (!tipoDeVentaId || !tipoDePagoId) {
+      alert("Seleccione tipo de venta y tipo de pago");
+      return;
+    }
+    if (!esContado && !clienteId) {
+      alert("Para venta a crédito debe seleccionar un cliente");
       return;
     }
     if (ventaProductos.length === 0) {
       alert("Agregue al menos un producto");
       return;
     }
-    const productoIds = ventaProductos.flatMap((p) =>
-      Array(p.cantidad).fill(p.producto.id),
-    );
+    const productos = ventaProductos.map((p) => ({
+      producto_id: p.producto.id,
+      cantidad: p.cantidad,
+      precio_unitario: p.producto.precioDeVenta,
+    }));
     const valorTotal = ventaProductos.reduce(
       (sum, p) => sum + p.producto.precioDeVenta * p.cantidad,
       0,
     );
+    const payload = {
+      valor_total: valorTotal,
+      tipo_de_venta_id: tipoDeVentaId,
+      tipo_de_pago_id: tipoDePagoId,
+      productos,
+    };
+    if (clienteId) payload.cliente_id = clienteId;
+
     try {
-      await api.createVenta({
-        valor_total: valorTotal,
-        tipo_de_venta_id: tipoDeVentaId,
-        tipo_de_pago_id: tipoDePagoId,
-        cliente_id: clienteId,
-        producto_ids: productoIds,
-      });
+      await api.createVenta(payload);
       ventaProductos = [];
       renderVentaProductos();
       ventaForm.reset();
@@ -128,18 +153,34 @@ function renderVentaProductos() {
   );
   ul.innerHTML = ventaProductos
     .map(
-      (p, i) => `
-    <li>
-      <span>${p.producto.nombre} ${
-        p.cantidad > 1 ? `x${p.cantidad}` : ""
-      }</span>
-      <span>$${(p.producto.precioDeVenta * p.cantidad).toLocaleString()}</span>
+      (p, i) => {
+        const subtotal = p.producto.precioDeVenta * p.cantidad;
+        return `
+    <li class="venta-linea">
+      <span class="venta-linea-nombre">${p.producto.nombre} ${
+          p.cantidad > 1 ? `x${p.cantidad}` : ""
+        }</span>
+      <label class="venta-linea-precio">
+        Precio: <input type="number" min="0" step="100" value="${p.producto.precioDeVenta}" data-index="${i}" class="input-precio-venta" />
+      </label>
+      <span class="venta-linea-subtotal">$${subtotal.toLocaleString()}</span>
       <button type="button" class="btn-remove" data-index="${i}">Quitar</button>
     </li>
-  `,
+  `;
+      },
     )
     .join("");
   totalEl.textContent = total.toLocaleString();
+  ul.querySelectorAll(".input-precio-venta").forEach((input) => {
+    input.addEventListener("change", () => {
+      const idx = parseInt(input.dataset.index, 10);
+      const val = parseInt(input.value, 10);
+      if (!Number.isNaN(val) && val >= 0 && ventaProductos[idx]) {
+        ventaProductos[idx].producto.precioDeVenta = val;
+        renderVentaProductos();
+      }
+    });
+  });
   ul.querySelectorAll(".btn-remove").forEach((btn) => {
     btn.addEventListener("click", () => {
       ventaProductos.splice(parseInt(btn.dataset.index, 10), 1);
@@ -173,12 +214,15 @@ async function loadVentas() {
       '<option value="">Seleccionar tipo...</option>' +
       (tipos || [])
         .map(
-          (t) =>
-            `<option value="${t.id}">${
+          (t) => {
+            const desc = (getStr(t, "descripcion") || "").toLowerCase();
+            return `<option value="${t.id}" data-descripcion="${desc}">${
               getStr(t, "descripcion") || "Tipo " + t.id
-            }</option>`,
+            }</option>`;
+          },
         )
         .join("");
+    toggleClienteRequerido();
     selectTipoPago.innerHTML =
       '<option value="">Seleccionar forma de pago...</option>' +
       (tiposPago || [])
@@ -236,18 +280,12 @@ async function showVentaDetalle(ventaId) {
     const fecha = venta.fecha
       ? new Date(venta.fecha).toLocaleString("es-CO")
       : "N/A";
-    const productos = (venta.productosDeLaVenta || []).reduce((acc, pv) => {
+    const productos = (venta.productosDeLaVenta || []).map((pv) => {
       const nombre = getStr(pv.producto, "nombre") || "Producto";
-      const precio = getNum(pv.producto, "precio_de_venta");
-      const exist = acc.find((x) => x.nombre === nombre);
-      if (exist) {
-        exist.cantidad++;
-        exist.subtotal += precio;
-      } else {
-        acc.push({ nombre, cantidad: 1, precio, subtotal: precio });
-      }
-      return acc;
-    }, []);
+      const cantidad = pv.cantidad ?? 1;
+      const precio = pv.precioUnitario != null ? pv.precioUnitario : getNum(pv.producto, "precio_de_venta");
+      return { nombre, cantidad, precio, subtotal: cantidad * precio };
+    });
     document.getElementById("venta-detalle-content").innerHTML = `
       <div class="venta-detalle-info">
         <p><strong>Cliente:</strong> ${

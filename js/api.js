@@ -33,7 +33,16 @@ async function doRequest(baseUrl, endpoint, options) {
     return { ok: false, status: response.status, error, response };
   }
 
-  return { ok: true, data: await response.json() };
+  const text = await response.text();
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
+    }
+  }
+  return { ok: true, data };
 }
 
 async function request(endpoint, options = {}) {
@@ -105,8 +114,13 @@ const api = {
 
   // Tipos de pago
   getTiposPago: () => request("/tipos-de-pago"),
+  getTipoPago: (id) => request(`/tipos-de-pago/${id}`),
   createTipoPago: (data) =>
     request("/tipos-de-pago", { method: "POST", body: data }),
+  updateTipoPago: (id, data) =>
+    request(`/tipos-de-pago/${id}`, { method: "PATCH", body: data }),
+  deleteTipoPago: (id) =>
+    request(`/tipos-de-pago/${id}`, { method: "DELETE" }),
 
   // Ventas
   getVentas: () => request("/ventas"),

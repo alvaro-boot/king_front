@@ -174,17 +174,19 @@ function initVentas() {
 
   ventaForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const clienteId = parseInt(
-      document.getElementById("venta-cliente").value,
-      10,
-    );
-    const tipoDeVentaId = parseInt(
-      document.getElementById("venta-tipo").value,
-      10,
-    );
+    const selectTipo = document.getElementById("venta-tipo");
+    const tipoDeVentaId = parseInt(selectTipo.value, 10);
+    const descripcionTipo = (selectTipo.selectedOptions[0]?.dataset?.descripcion || "").toLowerCase();
+    const esContado = descripcionTipo.includes("contado");
+    const clienteIdRaw = document.getElementById("venta-cliente").value;
+    const clienteId = clienteIdRaw ? parseInt(clienteIdRaw, 10) : null;
 
-    if (!clienteId || !tipoDeVentaId) {
-      alert("Seleccione cliente y tipo de venta");
+    if (!tipoDeVentaId) {
+      alert("Seleccione tipo de venta");
+      return;
+    }
+    if (!esContado && !clienteId) {
+      alert("Para venta a crédito debe seleccionar un cliente");
       return;
     }
 
@@ -193,21 +195,25 @@ function initVentas() {
       return;
     }
 
-    const productoIds = ventaProductos.flatMap((p) =>
-      Array(p.cantidad).fill(p.producto.id),
-    );
+    const productos = ventaProductos.map((p) => ({
+      producto_id: p.producto.id,
+      cantidad: p.cantidad,
+      precio_unitario: p.producto.precioDeVenta,
+    }));
     const valorTotal = ventaProductos.reduce(
       (sum, p) => sum + p.producto.precioDeVenta * p.cantidad,
       0,
     );
 
+    const payload = {
+      valor_total: valorTotal,
+      tipo_de_venta_id: tipoDeVentaId,
+      productos,
+    };
+    if (clienteId) payload.cliente_id = clienteId;
+
     try {
-      await api.createVenta({
-        valor_total: valorTotal,
-        tipo_de_venta_id: tipoDeVentaId,
-        cliente_id: clienteId,
-        producto_ids: productoIds,
-      });
+      await api.createVenta(payload);
       ventaProductos = [];
       renderVentaProductos();
       ventaForm.reset();
@@ -230,20 +236,32 @@ function renderVentaProductos() {
 
   ul.innerHTML = ventaProductos
     .map(
-      (p, i) => `
-    <li>
-      <span>${p.producto.nombre} ${
-        p.cantidad > 1 ? `x${p.cantidad}` : ""
-      }</span>
-      <span>$${(p.producto.precioDeVenta * p.cantidad).toLocaleString()}</span>
+      (p, i) => {
+        const subtotal = p.producto.precioDeVenta * p.cantidad;
+        return `
+    <li class="venta-linea">
+      <span class="venta-linea-nombre">${p.producto.nombre} ${p.cantidad > 1 ? `x${p.cantidad}` : ""}</span>
+      <label class="venta-linea-precio">Precio: <input type="number" min="0" step="100" value="${p.producto.precioDeVenta}" data-index="${i}" class="input-precio-venta" /></label>
+      <span class="venta-linea-subtotal">$${subtotal.toLocaleString()}</span>
       <button type="button" class="btn-remove" data-index="${i}">Quitar</button>
     </li>
-  `,
+  `;
+      },
     )
     .join("");
 
   totalEl.textContent = total.toLocaleString();
 
+  ul.querySelectorAll(".input-precio-venta").forEach((input) => {
+    input.addEventListener("change", () => {
+      const idx = parseInt(input.dataset.index, 10);
+      const val = parseInt(input.value, 10);
+      if (!Number.isNaN(val) && val >= 0 && ventaProductos[idx]) {
+        ventaProductos[idx].producto.precioDeVenta = val;
+        renderVentaProductos();
+      }
+    });
+  });
   ul.querySelectorAll(".btn-remove").forEach((btn) => {
     btn.addEventListener("click", () => {
       ventaProductos.splice(parseInt(btn.dataset.index, 10), 1);
@@ -275,10 +293,12 @@ async function loadVentas() {
       '<option value="">Seleccionar tipo...</option>' +
       tipos
         .map(
-          (t) =>
-            `<option value="${t.id}">${
+          (t) => {
+            const desc = ((t.descripcion || "") + "").toLowerCase();
+            return `<option value="${t.id}" data-descripcion="${desc}">${
               t.descripcion || "Tipo " + t.id
-            }</option>`,
+            }</option>`;
+          },
         )
         .join("");
     selectProducto.innerHTML =
@@ -456,7 +476,7 @@ async function loadProductos() {
                 }">Editar</button>
                 <button class="btn btn-secondary btn-sm btn-delete-producto" data-id="${
                   p.id
-                }">Eliminar</button>
+                }">Deshabilitar</button>
               </td>
             </tr>
           `,
@@ -488,12 +508,12 @@ async function loadProductos() {
 
     container.querySelectorAll(".btn-delete-producto").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm("¿Eliminar este producto?")) return;
+        if (!confirm("¿Deshabilitar este producto? No aparecerá en ventas ni en listados.")) return;
         try {
           await api.deleteProducto(parseInt(btn.dataset.id, 10));
           loadProductos();
         } catch (err) {
-          alert(err.message || "Error al eliminar");
+          alert(err.message || "Error al deshabilitar");
         }
       });
     });

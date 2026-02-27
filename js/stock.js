@@ -1,5 +1,6 @@
 let editingProductoId = null;
 let editingCategoriaId = null;
+let editingTipoPagoId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   const user = requireAuth();
@@ -12,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initStock();
   loadProductos();
   loadCategorias();
+  loadTiposPago();
 });
 
 function initStock() {
@@ -144,7 +146,7 @@ async function loadProductos() {
               }">Editar</button>
               <button class="btn btn-secondary btn-sm btn-delete-producto" data-id="${
                 p.id
-              }">Eliminar</button>
+              }">Deshabilitar</button>
             </td>
           </tr>
         `,
@@ -181,12 +183,12 @@ async function loadProductos() {
     });
     container.querySelectorAll(".btn-delete-producto").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm("¿Eliminar este producto?")) return;
+        if (!confirm("¿Deshabilitar este producto? No aparecerá en ventas ni en listados.")) return;
         try {
           await api.deleteProducto(parseInt(btn.dataset.id, 10));
           loadProductos();
         } catch (err) {
-          alert(err.message || "Error al eliminar");
+          alert(err.message || "Error al deshabilitar");
         }
       });
     });
@@ -268,5 +270,99 @@ async function loadCategorias() {
       '<div class="empty-state">Error al cargar: ' +
       (err.message || "Ver consola") +
       "</div>";
+  }
+}
+
+document
+  .getElementById("btn-nuevo-tipo-pago")
+  ?.addEventListener("click", () => {
+    editingTipoPagoId = null;
+    document.getElementById("tipo-pago-form-title").textContent =
+      "Nuevo Tipo de Pago";
+    document.getElementById("tipo-pago-form").style.display = "block";
+    document.getElementById("tipo-pago-form").reset();
+  });
+document
+  .getElementById("btn-cancelar-tipo-pago")
+  ?.addEventListener("click", () => {
+    document.getElementById("tipo-pago-form").style.display = "none";
+    editingTipoPagoId = null;
+  });
+document.getElementById("tipo-pago-form")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nombre = document.getElementById("tipo-pago-nombre").value.trim();
+  if (!nombre) return;
+  try {
+    if (editingTipoPagoId)
+      await api.updateTipoPago(editingTipoPagoId, { nombre });
+    else await api.createTipoPago({ nombre });
+    document.getElementById("tipo-pago-form").style.display = "none";
+    editingTipoPagoId = null;
+    document.getElementById("tipo-pago-nombre").value = "";
+    loadTiposPago();
+  } catch (err) {
+    alert(err.message || "Error al guardar tipo de pago");
+  }
+});
+
+async function loadTiposPago() {
+  try {
+    const tiposPago = await api.getTiposPago();
+    const container = document.getElementById("tipos-pago-lista");
+    if (!container) return;
+    if (!tiposPago || tiposPago.length === 0) {
+      container.innerHTML =
+        '<div class="empty-state">No hay tipos de pago. Cree uno nuevo (ej: Efectivo, Transferencia).</div>';
+      return;
+    }
+    container.innerHTML = `
+      <table class="data-table">
+        <thead><tr><th>Id</th><th>Nombre</th><th>Acciones</th></tr></thead>
+        <tbody>${tiposPago
+          .map(
+            (tp) => `
+          <tr>
+            <td>${tp.id}</td>
+            <td>${getStr(tp, "nombre")}</td>
+            <td class="actions">
+              <button class="btn btn-secondary btn-sm btn-edit-tipo-pago" data-id="${tp.id}">Editar</button>
+              <button class="btn btn-secondary btn-sm btn-delete-tipo-pago" data-id="${tp.id}">Eliminar</button>
+            </td>
+          </tr>
+        `,
+          )
+          .join("")}</tbody>
+      </table>
+    `;
+    container.querySelectorAll(".btn-edit-tipo-pago").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tp = tiposPago.find((x) => x.id === parseInt(btn.dataset.id, 10));
+        if (!tp) return;
+        editingTipoPagoId = tp.id;
+        document.getElementById("tipo-pago-form-title").textContent =
+          "Editar Tipo de Pago";
+        document.getElementById("tipo-pago-form").style.display = "block";
+        document.getElementById("tipo-pago-nombre").value = getStr(tp, "nombre");
+      });
+    });
+    container.querySelectorAll(".btn-delete-tipo-pago").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("¿Eliminar este tipo de pago? Las ventas que lo usen seguirán mostrándolo por id.")) return;
+        try {
+          await api.deleteTipoPago(parseInt(btn.dataset.id, 10));
+          loadTiposPago();
+        } catch (err) {
+          alert(err.message || "Error al eliminar");
+        }
+      });
+    });
+  } catch (err) {
+    console.error("Error al cargar tipos de pago:", err);
+    const container = document.getElementById("tipos-pago-lista");
+    if (container)
+      container.innerHTML =
+        '<div class="empty-state">Error al cargar: ' +
+        (err.message || "Ver consola") +
+        "</div>";
   }
 }
