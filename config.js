@@ -7,5 +7,5 @@ const CONFIG = {
   // API_BASE: "https://backend-king-perfum.onrender.com",
   // API_BASE: "http://localhost:3000",
   API_BASE:
-    "https://backend-kingperfum-ebi0nfgxl-alvarocotesjc-9801s-projects.vercel.app/",
+    "https://backend-kingperfum-8r92e2nif-alvarocotesjc-9801s-projects.vercel.app/",
 };
