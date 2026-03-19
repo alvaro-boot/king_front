@@ -8,15 +8,21 @@ document.addEventListener("DOMContentLoaded", () => {
   currentUser = requireAuth();
   if (!currentUser) return;
 
+  const descripcionRolRaw =
+    currentUser?.rol?.descripcion ??
+    currentUser?.rol?.descipcion ??
+    "";
+  const descripcionRol = String(descripcionRolRaw);
+
   isVendedor =
-    (currentUser?.rol?.descripcion || "")
+    (descripcionRol || "")
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .includes("vendedor") || false;
 
   isAdmin =
-    (currentUser?.rol?.descripcion || "")
+    (descripcionRol || "")
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")

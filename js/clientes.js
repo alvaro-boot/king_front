@@ -4,11 +4,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const user = requireAuth();
   if (!user) return;
 
-  const descripcionRol =
-    (user?.rol?.descripcion || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") || "";
+  const descripcionRolRaw =
+    user?.rol?.descripcion ?? user?.rol?.descipcion ?? "";
+  const descripcionRol = String(descripcionRolRaw)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
   const isAdmin = descripcionRol.includes("admin");
   const navUsuarios = document.getElementById("nav-usuarios");
   if (navUsuarios) navUsuarios.style.display = isAdmin ? "inline-flex" : "none";
