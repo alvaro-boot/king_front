@@ -6,6 +6,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const user = requireAuth();
   if (!user) return;
 
+  const descripcionRol =
+    (user?.rol?.descripcion || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") || "";
+  const isAdmin = descripcionRol.includes("admin");
+  const navUsuarios = document.getElementById("nav-usuarios");
+  if (navUsuarios) navUsuarios.style.display = isAdmin ? "inline-flex" : "none";
+
   document.getElementById("user-name").textContent =
     user.nombreCompleto || user.usuario;
   document.getElementById("btn-logout").addEventListener("click", logout);

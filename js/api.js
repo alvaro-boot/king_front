@@ -7,7 +7,9 @@ const API_BASE =
   (typeof CONFIG !== "undefined" && CONFIG.API_BASE) || "http://localhost:3000";
 
 async function doRequest(baseUrl, endpoint, options) {
-  const url = `${baseUrl}${endpoint}`;
+  const base = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+  const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const url = `${base}${path}`;
   const config = {
     headers: {
       "Content-Type": "application/json",
@@ -50,9 +52,12 @@ async function request(endpoint, options = {}) {
 
   // Si 404 y usamos /api, intentar sin /api (o viceversa)
   if (!result.ok && result.status === 404) {
-    const altBase = API_BASE.endsWith("/api")
-      ? API_BASE.replace(/\/api\/?$/, "")
-      : API_BASE.replace(/\/?$/, "") + "/api";
+    const baseNorm = API_BASE.endsWith("/")
+      ? API_BASE.slice(0, -1)
+      : API_BASE;
+    const altBase = baseNorm.endsWith("/api")
+      ? baseNorm.replace(/\/api\/?$/, "")
+      : baseNorm + "/api";
     result = await doRequest(altBase, endpoint, options);
   }
 
@@ -124,6 +129,21 @@ const api = {
 
   // Ventas
   getVentas: () => request("/ventas"),
+  getMisVentas: (vendedorId) =>
+    request(`/ventas/mis?vendedorId=${encodeURIComponent(vendedorId)}`),
   createVenta: (data) => request("/ventas", { method: "POST", body: data }),
   getVenta: (id) => request(`/ventas/${id}`),
+
+  // Comisiones
+  getComisiones: (vendedorId) =>
+    vendedorId != null
+      ? request(`/comisiones?vendedorId=${encodeURIComponent(vendedorId)}`)
+      : request("/comisiones"),
+
+  // Roles
+  getRoles: () => request("/roles"),
+
+  // Usuarios
+  getUsuarios: () => request("/usuarios"),
+  createUsuario: (data) => request("/usuarios", { method: "POST", body: data }),
 };

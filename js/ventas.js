@@ -1,14 +1,42 @@
 let ventaProductos = [];
+let currentUser = null;
+let isVendedor = false;
+let isAdmin = false;
+let comisionPorVentaId = new Map();
 
 document.addEventListener("DOMContentLoaded", () => {
-  const user = requireAuth();
-  if (!user) return;
+  currentUser = requireAuth();
+  if (!currentUser) return;
+
+  isVendedor =
+    (currentUser?.rol?.descripcion || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .includes("vendedor") || false;
+
+  isAdmin =
+    (currentUser?.rol?.descripcion || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .includes("admin") || false;
+
+  const navUsuarios = document.getElementById("nav-usuarios");
+  if (navUsuarios) navUsuarios.style.display = isAdmin ? "inline-flex" : "none";
+
+  // Administradores: solo visualizan, no registran ventas.
+  if (isAdmin) {
+    const ventaFormCard = document.querySelector(".venta-form-card");
+    if (ventaFormCard) ventaFormCard.style.display = "none";
+  } else {
+    initVentas();
+  }
 
   document.getElementById("user-name").textContent =
-    user.nombreCompleto || user.usuario;
+    currentUser.nombreCompleto || currentUser.usuario;
   document.getElementById("btn-logout").addEventListener("click", logout);
 
-  initVentas();
   loadVentas();
   document
     .getElementById("btn-cerrar-venta-detalle")
@@ -130,6 +158,7 @@ function initVentas() {
       productos,
     };
     if (clienteId) payload.cliente_id = clienteId;
+    if (currentUser?.id != null) payload.vendedor_id = currentUser.id;
 
     try {
       await api.createVenta(payload);
@@ -191,13 +220,26 @@ function renderVentaProductos() {
 
 async function loadVentas() {
   try {
+    const ventasPromise = isVendedor
+      ? api.getMisVentas(currentUser.id)
+      : api.getVentas();
+
+    const comisionesPromise = isVendedor
+      ? api.getComisiones(currentUser.id)
+      : api.getComisiones();
+
     const [ventas, clientes, tipos, tiposPago, productos] = await Promise.all([
-      api.getVentas(),
+      ventasPromise,
       api.getClientes(),
       api.getTiposVenta(),
       api.getTiposPago(),
       api.getProductos(),
     ]);
+    const comisiones = await comisionesPromise;
+
+    comisionPorVentaId = new Map(
+      (comisiones || []).map((c) => [c.ventaId ?? c.venta?.id, c]),
+    );
     const selectCliente = document.getElementById("venta-cliente");
     const selectTipo = document.getElementById("venta-tipo");
     const selectTipoPago = document.getElementById("venta-tipo-pago");
@@ -264,6 +306,31 @@ async function loadVentas() {
         showVentaDetalle(parseInt(el.dataset.id, 10)),
       );
     });
+
+    const comisionesLista = document.getElementById("comisiones-lista");
+    if (comisionesLista) {
+      comisionesLista.innerHTML =
+        !comisiones || comisiones.length === 0
+          ? '<div class="empty-state">No hay comisiones registradas</div>'
+          : comisiones
+              .slice(0, 50)
+              .map((c) => {
+                const fecha = c.fecha
+                  ? new Date(c.fecha).toLocaleString("es-CO")
+                  : "N/A";
+                const ventaId = c.ventaId ?? c.venta?.id;
+                return `
+                  <div class="venta-item" data-venta-id="${ventaId || ""}">
+                    <strong>#${ventaId || "N/A"}</strong> - $${getNum(
+                      c,
+                      "valor_comision",
+                    ).toLocaleString()}
+                    <br><small>${getNum(c, "porcentaje")}% - ${fecha}</small>
+                  </div>
+                `;
+              })
+              .join("");
+    }
   } catch (err) {
     console.error("Error cargando ventas:", err);
     document.getElementById("ventas-lista").innerHTML =
@@ -276,6 +343,7 @@ async function loadVentas() {
 async function showVentaDetalle(ventaId) {
   try {
     const venta = await api.getVenta(ventaId);
+    const comision = comisionPorVentaId.get(ventaId);
     document.getElementById("venta-detalle-id").textContent = venta.id;
     const fecha = venta.fecha
       ? new Date(venta.fecha).toLocaleString("es-CO")
@@ -302,6 +370,14 @@ async function showVentaDetalle(ventaId) {
           venta,
           "valor_total",
         ).toLocaleString()}</p>
+        ${
+          comision
+            ? `<p><strong>Comisión:</strong> $${getNum(
+                comision,
+                "valor_comision",
+              ).toLocaleString()} (${getNum(comision, "porcentaje")}%)</p>`
+            : ""
+        }
       </div>
       <div class="venta-detalle-productos">
         <h5>Productos</h5>
